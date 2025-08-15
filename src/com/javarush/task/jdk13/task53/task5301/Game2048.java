@@ -3,9 +3,10 @@ package com.javarush.task.jdk13.task53.task5301;
 import com.javarush.engine.cell.*;
 
 public class Game2048 extends Game {
-    private static final int SIDE = 4;
-    private int[][] gameField = new int[SIDE][SIDE];
+    private static final int SIDE = 6;
+    private int[][] gameField;
     private boolean isGameStopped = false;
+    private int score = 0;
 
     @Override
     public void initialize() {
@@ -22,6 +23,7 @@ public class Game2048 extends Game {
                 isGameStopped = false;
                 createGame();
                 drawScene();
+                return;
             } else {
                 return;
             }
@@ -34,16 +36,12 @@ public class Game2048 extends Game {
 
         if (key == Key.LEFT) {
             moveLeft();
-            drawScene();
         } else if (key == Key.RIGHT) {
             moveRight();
-            drawScene();
         } else if (key == Key.UP) {
             moveUp();
-            drawScene();
         } else if (key == Key.DOWN) {
             moveDown();
-            drawScene();
         } else {
             return;
         }
@@ -54,6 +52,8 @@ public class Game2048 extends Game {
         gameField = new int[SIDE][SIDE];
         createNewNumber();
         createNewNumber();
+        score = 0;
+        setScore(score);
     }
 
     private void drawScene() {
@@ -74,7 +74,6 @@ public class Game2048 extends Game {
             int y = getRandomNumber(SIDE);
             if (gameField[y][x] == 0) {
                 gameField[y][x] = getRandomNumber(10) == 9 ? 4 : 2;
-                setCellColoredNumber(x, y, gameField[y][x]);
                 break;
             }
         }
@@ -85,34 +84,21 @@ public class Game2048 extends Game {
     }
 
     private Color getColorByValue(int value) {
-        switch (value) {
-            case 0:
-                return Color.DARKGRAY;
-            case 2:
-                return Color.GREEN;
-            case 4:
-                return Color.CYAN;
-            case 8:
-                return Color.AQUAMARINE;
-            case 16:
-                return Color.DEEPPINK;
-            case 32:
-                return Color.LIGHTCORAL;
-            case 64:
-                return Color.MEDIUMPURPLE;
-            case 128:
-                return Color.SPRINGGREEN;
-            case 256:
-                return Color.PLUM;
-            case 512:
-                return Color.PERU;
-            case 1024:
-                return Color.SILVER;
-            case 2048:
-                return Color.GOLD;
-            default:
-                return Color.NONE;
-        }
+        return switch (value) {
+            case 0 -> Color.DARKGRAY;
+            case 2 -> Color.GREEN;
+            case 4 -> Color.CYAN;
+            case 8 -> Color.AQUAMARINE;
+            case 16 -> Color.DEEPPINK;
+            case 32 -> Color.LIGHTCORAL;
+            case 64 -> Color.MEDIUMPURPLE;
+            case 128 -> Color.SPRINGGREEN;
+            case 256 -> Color.PLUM;
+            case 512 -> Color.PERU;
+            case 1024 -> Color.SILVER;
+            case 2048 -> Color.GOLD;
+            default -> Color.NONE;
+        };
     }
 
     private boolean compressRow(int[] row) {
@@ -140,6 +126,8 @@ public class Game2048 extends Game {
                 row[i - 1] += row[i];
                 row[i] = 0;
                 result = true;
+                score += row[i - 1];
+                setScore(score);
                 i++;
             }
         }
@@ -148,11 +136,11 @@ public class Game2048 extends Game {
 
     private void moveLeft() {
         boolean isNewNumberNeed = false;
-        for (int i = 0; i < gameField.length; i++) {
-            boolean a = compressRow(gameField[i]);
-            boolean b = mergeRow(gameField[i]);
-            boolean c = compressRow(gameField[i]);
-            if (a || b || c) {
+        for (int[] row : gameField) {
+            boolean isCompressed = compressRow(row);
+            boolean isMerged = mergeRow(row);
+            isCompressed = compressRow(row);
+            if (isCompressed || isMerged) {
                 isNewNumberNeed = true;
             }
         }
@@ -187,9 +175,9 @@ public class Game2048 extends Game {
 
     private void rotateClockwise() {
         int[][] result = new int[SIDE][SIDE];
-        for (int i = 0; i < gameField.length; i++) {
-            for (int j = 0; j < gameField.length; j++) {
-                result[i][j] = gameField[SIDE - j - 1][i];
+        for (int y = 0; y < gameField.length; y++) {
+            for (int x= 0; x < gameField.length; x++) {
+                result[y][x] = gameField[SIDE - x - 1][y];
             }
         }
         gameField = result;
@@ -197,10 +185,10 @@ public class Game2048 extends Game {
 
     private int getMaxTileValue() {
         int maxTileValue = gameField[0][0];
-        for (int i = 0; i < gameField.length; i++) {
-            for (int j = 0; j < gameField.length; j++) {
-                if (gameField[i][j] > maxTileValue) {
-                    maxTileValue = gameField[i][j];
+        for (int y = 0; y < gameField.length; y++) {
+            for (int x = 0; x < gameField.length; x++) {
+                if (gameField[y][x] > maxTileValue) {
+                    maxTileValue = gameField[y][x];
                 }
             }
         }
@@ -218,13 +206,13 @@ public class Game2048 extends Game {
     }
 
     private boolean canUserMove() {
-        for (int i = 0; i < gameField.length; i++) {
-            for (int j = 0; j < gameField.length; j++) {
-                if (gameField[i][j] == 0) {
+        for (int y = 0; y < gameField.length; y++) {
+            for (int x = 0; x < gameField.length; x++) {
+                if (gameField[y][x] == 0) {
                     return true;
                 }
-                if (j > 0 && (gameField[i][j - 1] == gameField[i][j] ||
-                        gameField[j - 1][i] == gameField[j][i])) {
+                if (x > 0 && (gameField[y][x - 1] == gameField[y][x] ||
+                        gameField[x - 1][y] == gameField[x][y])) {
                     return true;
                 }
             }
